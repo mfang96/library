@@ -426,21 +426,14 @@ public class ServiceProxy extends TOMSender {
 				}
 				
 				if (response == null) {
-					if (requestType.equals(TOMMessageType.ORDERED_REQUEST)) {
-						if (receivedReplies == getViewManager().getCurrentViewN()) {
-							reqId = -1;
-							this.sm.release(); // resumes the thread that is executing the "invoke" method
-						}
-					}else if (requestType.equals(TOMMessageType.UNORDERED_HASHED_REQUEST)) {
+					if (requestType.equals(TOMMessageType.UNORDERED_HASHED_REQUEST)) {
 						if (hashResponseController.getNumberReplies() == getViewManager().getCurrentViewN()) {
 							reqId = -1;
 							this.sm.release(); // resumes the thread that is executing the "invoke" method
 						}
-					} else {  // UNORDERED
-						if (receivedReplies != sameContent) {
+					} else if (receivedReplies == getViewManager().getCurrentViewN()) {
 							reqId = -1;
 							this.sm.release(); // resumes the thread that is executing the "invoke" method
-						}
 					}
 				}
 			} else {
