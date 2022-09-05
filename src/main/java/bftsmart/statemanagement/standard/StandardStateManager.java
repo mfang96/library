@@ -211,7 +211,7 @@ public class StandardStateManager extends StateManager {
                     }
 
                     if (otherReplicaState != null && haveState == 1 && currentRegency > -1
-                            && currentLeader > -1 && currentView != null && (!isBFT || currentProof != null || appStateOnly)) {
+                            && currentLeader > -1 && currentView != null && (!isBFT || withoutConsensusMessage() ||currentProof != null || appStateOnly)) {
 
                         logger.info("Received state. Will install it");
 
@@ -371,6 +371,18 @@ public class StandardStateManager extends StateManager {
             }
         }
         return null;
+    }
+
+    private boolean withoutConsensusMessage(){
+        int counter = 0;
+
+        for (CertifiedDecision cDec : senderProofs.values()) {
+            if (cDec == null){
+                counter++;
+            }
+        }
+        boolean result = counter > SVController.getQuorum();
+        return result;
     }
 
     private int getNumEqualStates() {
