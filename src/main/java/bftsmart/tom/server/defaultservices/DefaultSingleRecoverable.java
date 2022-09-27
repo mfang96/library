@@ -131,7 +131,7 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
         logger.debug("Saving state of CID " + lastCID);
 
         thisLog.newCheckpoint(snapshot, computeHash(snapshot), lastCID);
-        thisLog.setLastCID(lastCID);
+        thisLog.setLastCID(-1);
         thisLog.setLastCheckpointCID(lastCID);
 
         logLock.unlock();
