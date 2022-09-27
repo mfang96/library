@@ -41,9 +41,9 @@ import org.slf4j.LoggerFactory;
  * @author Marcel Santos
  */
 public abstract class DefaultSingleRecoverable implements Recoverable, SingleExecutable {
-    
+
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-    
+
     protected ReplicaContext replicaContext;
     private TOMConfiguration config;
     private ServerViewController controller;
@@ -52,15 +52,15 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
     private ReentrantLock logLock = new ReentrantLock();
     private ReentrantLock hashLock = new ReentrantLock();
     private ReentrantLock stateLock = new ReentrantLock();
-    
+
     private MessageDigest md;
-        
+
     private StateLog log;
     private List<byte[]> commands = new ArrayList<>();
     private List<MessageContext> msgContexts = new ArrayList<>();
-    
+
     private StateManager stateManager;
-    
+
     public DefaultSingleRecoverable() {
 
         try {
@@ -69,29 +69,29 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
             logger.error("Failed to get message digest engine", ex);
         }
     }
-    
+
     @Override
     public byte[] executeOrdered(byte[] command, MessageContext msgCtx) {
-        
+
         return executeOrdered(command, msgCtx, false);
-        
+
     }
-    
+
     private byte[] executeOrdered(byte[] command, MessageContext msgCtx, boolean noop) {
-        
+
         int cid = msgCtx.getConsensusId();
-        
+
         byte[] reply = null;
-            
+
         if (!noop) {
             stateLock.lock();
             reply = appExecuteOrdered(command, msgCtx);
             stateLock.unlock();
         }
-        
+
         commands.add(command);
         msgContexts.add(msgCtx);
-        
+
         if(msgCtx.isLastInBatch()) {
 	        if ((cid > 0) && ((cid % checkpointPeriod) == 0)) {
 	            logger.debug("Performing checkpoint for consensus " + cid);
@@ -108,7 +108,7 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
         }
         return reply;
     }
-    
+
     private final byte[] computeHash(byte[] data) {
         byte[] ret = null;
         hashLock.lock();
@@ -117,12 +117,12 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
 
         return ret;
     }
-    
+
     private StateLog getLog() {
        	initLog();
     	return log;
     }
-    
+
     private void saveState(byte[] snapshot, int lastCID) {
         StateLog thisLog = getLog();
 
@@ -142,7 +142,7 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
     }
 
     private void saveCommands(byte[][] commands, MessageContext[] msgCtx) {
-        
+
         if (commands.length != msgCtx.length) {
             logger.debug("----SIZE OF COMMANDS AND MESSAGE CONTEXTS IS DIFFERENT----");
             logger.debug("----COMMANDS: " + commands.length + ", CONTEXTS: " + msgCtx.length + " ----");
@@ -166,7 +166,7 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
                 }
             }
         }
-        
+
         logLock.unlock();
     }
 
@@ -184,23 +184,23 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
         logLock.unlock();
         return ret;
     }
-    
+
     @Override
     public int setState(ApplicationState recvState) {
         int lastCID = -1;
         if (recvState instanceof DefaultApplicationState) {
-            
+
             DefaultApplicationState state = (DefaultApplicationState) recvState;
-            
+
             logger.info("Last CID in state: " + state.getLastCID());
-            
+
             logLock.lock();
             initLog();
             log.update(state);
             logLock.unlock();
-            
+
             int lastCheckpointCID = state.getLastCheckpointCID();
-            
+
             lastCID = state.getLastCID();
 
             logger.debug("I'm going to update myself from CID "
@@ -213,17 +213,18 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
                 try {
                     logger.debug("Processing and verifying batched requests for CID " + cid);
 
-                    CommandsInfo cmdInfo = state.getMessageBatch(cid); 
+                    CommandsInfo cmdInfo = state.getMessageBatch(cid);
                     byte[][] cmds = cmdInfo.commands; // take a batch
                     MessageContext[] msgCtxs = cmdInfo.msgCtx;
-                    
+
                     if (cmds == null || msgCtxs == null || msgCtxs[0].isNoOp()) {
                         continue;
                     }
-                    
+
                     for(int i = 0; i < cmds.length; i++) {
                     	appExecuteOrdered(cmds[i], msgCtxs[i]);
                     }
+                    saveCommands(cmds, msgCtxs);
                 } catch (Exception e) {
                     logger.error("Failed to process and verify batched requests",e);
                     if (e instanceof ArrayIndexOutOfBoundsException) {
@@ -275,7 +276,7 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
     		stateManager = new StandardStateManager();
     	return stateManager;
     }
-	
+
     private void initLog() {
     	if(log == null) {
     		checkpointPeriod = config.getCheckpointPeriod();
@@ -290,12 +291,12 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
             	log = new StateLog(controller.getStaticConf().getProcessId(), checkpointPeriod, state, computeHash(state));
     	}
     }
-          
+
     @Override
     public byte[] executeUnordered(byte[] command, MessageContext msgCtx) {
         return appExecuteUnordered(command, msgCtx);
     }
-    
+
     @Override
     public void Op(int CID, byte[] requests, MessageContext msgCtx) {
         //Requests are logged within 'executeOrdered(...)' instead of in this method.
@@ -303,40 +304,40 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
 
     @Override
     public void noOp(int CID, byte[][] operations, MessageContext[] msgCtx) {
-         
+
         for (int i = 0; i < msgCtx.length; i++) {
             executeOrdered(operations[i], msgCtx[i], true);
         }
     }
-    
+
     /**
      * Given a snapshot received from the state transfer protocol, install it
      * @param state The serialized snapshot
      */
     public abstract void installSnapshot(byte[] state);
-    
+
     /**
      * Returns a serialized snapshot of the application state
      * @return A serialized snapshot of the application state
      */
     public abstract byte[] getSnapshot();
-    
+
     /**
      * Execute a batch of ordered requests
-     * 
+     *
      * @param command The ordered request
      * @param msgCtx The context associated to each request
-     * 
+     *
      * @return the reply for the request issued by the client
      */
     public abstract byte[] appExecuteOrdered(byte[] command, MessageContext msgCtx);
-    
+
     /**
      * Execute an unordered request
-     * 
+     *
      * @param command The unordered request
      * @param msgCtx The context associated to the request
-     * 
+     *
      * @return the reply for the request issued by the client
      */
     public abstract byte[] appExecuteUnordered(byte[] command, MessageContext msgCtx);
