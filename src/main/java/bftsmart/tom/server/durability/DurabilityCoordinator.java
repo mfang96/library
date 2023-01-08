@@ -298,7 +298,7 @@ public abstract class DurabilityCoordinator implements Recoverable, BatchExecuta
 		logger.debug("(TOMLayer.saveState) Saving state of CID " + lastCID);
 
 		log.newCheckpoint(snapshot, computeHash(snapshot), lastCID);
-		log.setLastCID(-1);
+		log.setLastCID(lastCID);
 		log.setLastCheckpointCID(lastCID);
 
 		logLock.unlock();
