@@ -95,7 +95,20 @@ public class StandardStateManager extends StateManager {
 
         SMMessage smsg = new StandardSMMessage(SVController.getStaticConf().getProcessId(),
                 waitingCID, TOMUtil.SM_REQUEST, replica, null, null, -1, -1);
-        tomLayer.getCommunication().send(SVController.getCurrentViewOtherAcceptors(), smsg);
+
+        // first send to expected replica and wait 2s, try to avoid replica cannot send large state in time
+        tomLayer.getCommunication().send(new int[]{replica}, smsg);
+
+        int[] expectHashAcceptors = Arrays.stream(SVController.getCurrentViewOtherAcceptors())
+                .filter(acceptor -> acceptor != replica).toArray();
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        tomLayer.getCommunication().send(expectHashAcceptors, smsg);
 
         logger.info("I just sent a request to the other replicas for the state up to CID " + waitingCID);
 
@@ -190,7 +203,7 @@ public class StandardStateManager extends StateManager {
                         stateTimer.cancel();
                     }
                 }
-
+                logger.debug("Expected replica {} sent state. Receive from replica {}", replica, msg.getSender());
                 senderStates.put(msg.getSender(), msg.getState());
 
                 logger.debug("Verifying more than F replies");
@@ -208,10 +221,12 @@ public class StandardStateManager extends StateManager {
                                 haveState = -1;
                             }
                         }
+                    }else {
+                        logger.debug("state is null");
                     }
 
                     if (otherReplicaState != null && haveState == 1 && currentRegency > -1
-                            && currentLeader > -1 && currentView != null && (!isBFT || withoutConsensusMessage() ||currentProof != null || appStateOnly)) {
+                            && currentLeader > -1 && currentView != null && (!isBFT || withoutConsensusMessage() || currentProof != null || appStateOnly)) {
 
                         logger.info("Received state. Will install it");
 
@@ -373,11 +388,11 @@ public class StandardStateManager extends StateManager {
         return null;
     }
 
-    private boolean withoutConsensusMessage(){
+    private boolean withoutConsensusMessage() {
         int counter = 0;
 
         for (CertifiedDecision cDec : senderProofs.values()) {
-            if (cDec == null){
+            if (cDec == null) {
                 counter++;
             }
         }
