@@ -42,7 +42,7 @@ public class ShutdownHookThread extends Thread {
     @Override
     public void run() {
         
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
         int lastCons = tomLayer.getLastExec();
         int currentCons = tomLayer.getInExec();
