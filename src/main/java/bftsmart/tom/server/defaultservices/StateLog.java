@@ -215,8 +215,7 @@ public class StateLog {
             if (size > 0) {
                 batches = new CommandsInfo[size];
 
-                for (int i = 0; i < size; i++)
-                    batches[i] = messageBatches[i];
+                System.arraycopy(messageBatches, 0, batches, 0, size);
             }
             lastCID = cid;
             return new DefaultApplicationState(batches, lastCheckpointCID, lastCID, (setState ? state : null), stateHash, this.id);

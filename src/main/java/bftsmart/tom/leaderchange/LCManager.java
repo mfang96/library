@@ -163,9 +163,8 @@ public class LCManager {
     public void addRequestsFromSTOP(TOMMessage[] requestsFromSTOP) {
         if (this.requestsFromSTOP == null)
             this.requestsFromSTOP = new LinkedList<>();
-        
-        for (TOMMessage m : requestsFromSTOP)
-            this.requestsFromSTOP.add(m);
+
+        this.requestsFromSTOP.addAll(Arrays.asList(requestsFromSTOP));
     }
 
     /**

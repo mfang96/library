@@ -139,12 +139,7 @@ public class ClientData {
         //anb: new code to deal with client requests that arrive after their execution
         orderedRequests.addLast(request);
 
-	for(Iterator<TOMMessage> it = pendingRequests.iterator();it.hasNext();){
-		TOMMessage msg = it.next();
-		if(msg.getSequence()<request.getSequence()){
-			it.remove();
-		}
-	}
+        pendingRequests.removeIf(msg -> msg.getSequence() < request.getSequence());
 
     	return result;
     }
