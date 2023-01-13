@@ -444,19 +444,19 @@ public class Epoch implements Serializable {
      */
     @Override
     public String toString() {
-        StringBuffer buffWrite = new StringBuffer(1024);
-        StringBuffer buffAccept = new StringBuffer(1024);
+        StringBuilder buffWrite = new StringBuilder(1024);
+        StringBuilder buffAccept = new StringBuilder(1024);
 
         buffWrite.append("\n\t\tWrites=(");
         buffAccept.append("\n\t\tAccepts=(");
 
         for (int i = 0; i < write.length - 1; i++) {
-            buffWrite.append("[" + str(write[i]) + "], ");
-            buffAccept.append("[" + str(accept[i]) + "], ");
+            buffWrite.append("[").append(str(write[i])).append("], ");
+            buffAccept.append("[").append(str(accept[i])).append("], ");
         }
 
-        buffWrite.append("[" + str(write[write.length - 1]) +"])");
-        buffAccept.append("[" + str(accept[accept.length - 1]) + "])");
+        buffWrite.append("[").append(str(write[write.length - 1])).append("])");
+        buffAccept.append("[").append(str(accept[accept.length - 1])).append("])");
 
         return "\n\t\tCID=" + consensus.getId() + " \n\t\tTS=" + getTimestamp() + " " + "\n\t\tPropose=[" + (propValueHash != null ? str(propValueHash) : null) + "] " + buffWrite + " " + buffAccept;
     }
