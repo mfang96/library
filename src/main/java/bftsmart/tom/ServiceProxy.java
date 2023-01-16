@@ -306,10 +306,11 @@ public class ServiceProxy extends TOMSender {
 				//Reply to a normal request!
 				if (response.getViewID() == getViewManager().getCurrentViewId()) {
 					ret = response.getContent(); // return the response
-				} else {//if(response.getViewID() > getViewManager().getCurrentViewId())
+				} else {if(response.getViewID() > getViewManager().getCurrentViewId()) {
 					//updated view received
 					reconfigureTo((View) TOMUtil.getObject(response.getContent()));
 
+				}
 					canSendLock.unlock();
 					return invoke(request, reqType);
 				}
