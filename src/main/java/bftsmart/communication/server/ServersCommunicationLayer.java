@@ -372,7 +372,6 @@ public class ServersCommunicationLayer extends Thread {
 
     //******* EDUARDO BEGIN **************//
     private void establishConnection(SSLSocket newSocket, int remoteId) throws IOException {
-        if ((this.controller.getStaticConf().getTTPId() == remoteId) || this.controller.isCurrentViewMember(remoteId)) {
             connectionsLock.lock();
             if (this.connections.get(remoteId) == null) { //This must never happen!!!
                 //first time that this connection is being established
@@ -385,11 +384,6 @@ public class ServersCommunicationLayer extends Thread {
                 this.connections.get(remoteId).reconnect(newSocket);
             }
             connectionsLock.unlock();
-
-        } else {
-			logger.debug("Closing connection with replica: {}", remoteId);
-            newSocket.close();
-        }
     }
     //******* EDUARDO END **************//
 
