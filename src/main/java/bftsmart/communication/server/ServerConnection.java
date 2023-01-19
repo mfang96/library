@@ -199,32 +199,28 @@ public class ServerConnection {
 	 * reconnection is done
 	 */
 	private final void sendBytes(byte[] messageData) {
-		boolean abort = false;
-		do {
-			if (abort)
-				return; // if there is a need to reconnect, abort this method
-			if (socket != null && socketOutStream != null) {
-				try {
-					// do an extra copy of the data to be sent, but on a single out stream write
-					byte[] data = new byte[5 + messageData.length];// without MAC
-					int value = messageData.length;
+
+		// do an extra copy of the data to be sent, but on a single out stream write
+		byte[] data = new byte[5 + messageData.length];// without MAC
+		int value = messageData.length;
 
 					System.arraycopy(new byte[] { (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8),
 							(byte) value }, 0, data, 0, 4);
 					System.arraycopy(messageData, 0, data, 4, messageData.length);
 					System.arraycopy(new byte[] { (byte) 0 }, 0, data, 4 + messageData.length, 1);
 
+		do {
+			if (socket != null && socketOutStream != null) {
+				try {
 					socketOutStream.write(data);
 
 					return;
 				} catch (IOException ex) {
 					closeSocket();
 					waitAndConnect();
-					abort = true;
 				}
 			} else {
 				waitAndConnect();
-				abort = true;
 			}
 		} while (doWork);
 	}
