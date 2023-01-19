@@ -355,6 +355,7 @@ public class StandardStateManager extends StateManager {
                             stateTimer.cancel();
                         }
                         waitingCID = -1;
+                        lastCID = -1;
                         //requestState();
                     } else {
                         logger.debug("State transfer not yet finished");
