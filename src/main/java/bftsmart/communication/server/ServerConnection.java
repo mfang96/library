@@ -374,6 +374,23 @@ public class ServerConnection {
         }
     }
 
+	private int readInt() throws IOException {
+		int ch1;
+		while ((ch1 = socketInStream.read()) < 0) {
+			try {
+				Thread.sleep(POOL_TIME);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		int ch2 = socketInStream.read();
+		int ch3 = socketInStream.read();
+		int ch4 = socketInStream.read();
+		if ((ch1 | ch2 | ch3 | ch4) < 0)
+			throw new RuntimeException("非法的data size");
+		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4));
+	}
+
     /**
      * Thread used to receive packets from the remote server.
      */
@@ -391,7 +408,7 @@ public class ServerConnection {
 
 					try {
 						// read data length
-						int dataLength = socketInStream.readInt();
+						int dataLength = readInt();
 						byte[] data = new byte[dataLength];
 
 						// read data
@@ -459,7 +476,7 @@ public class ServerConnection {
 				if (socket != null && socketInStream != null) {
 					try {
 						// read data length
-						int dataLength = socketInStream.readInt();
+						int dataLength = readInt();
 
 						byte[] data = new byte[dataLength];
 
