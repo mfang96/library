@@ -324,6 +324,31 @@ public final class ExecutionManager {
         return result;
     }
 
+
+    public boolean isValidCid(int cid) {
+        outOfContextLock.lock();
+        boolean result;
+        // Contain PROPOSE msg for the cid
+        if (outOfContextProposes.containsKey(cid)) {
+            logger.info("proposes has been rev");
+            result = true;
+        }
+        // there is no msg
+        else if (outOfContextProposes.isEmpty() && outOfContext.isEmpty()) {
+            logger.info("proposes is empty");
+            result = true;
+        }
+        // it is the last msg
+        else {
+            int maxContextCid = outOfContext.keySet().stream().max(Integer::compareTo).orElse(-1);
+            int maxProposeCid = outOfContextProposes.keySet().stream().max(Integer::compareTo).orElse(-1);
+            result = cid == maxProposeCid + 2 && maxProposeCid >= maxContextCid;
+            logger.info("proposes has been decided by last msg {}", result);
+        }
+        outOfContextLock.unlock();
+        return result;
+    }
+
     /**
      * Removes a consensus from this manager
      * @param id ID of the consensus to be removed

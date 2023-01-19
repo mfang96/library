@@ -320,7 +320,7 @@ public abstract class StateManager {
                         dt.canDeliver();
                         dt.resumeDecisionDelivery();
                         break;
-                    } else {
+                    } else if (tomLayer.execManager.isValidCid(cid + 2)) {
                         //ask for state
                         logger.info("Requesting state from other replicas");
                         lastCID = cid + 1;
@@ -328,6 +328,8 @@ public abstract class StateManager {
                             waitingCID = cid;
                             requestState();
                         }
+                    } else {
+                        logger.info("the next PROPOSE msg after the cid has not been received");
                     }
                 }
             }
