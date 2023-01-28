@@ -87,15 +87,7 @@ public class ServerConnection {
     
     private SecretKey secretKey = null;
 
-    /**
-     * Tulio A. Ribeiro
-     * TLS vars. 
-     */
-    private KeyManagerFactory kmf;
 	private KeyStore ks = null;
-	private FileInputStream fis = null;
-	private TrustManagerFactory trustMgrFactory;
-	private SSLContext context;
 	private SSLSocketFactory socketFactory;
 	private static final String SECRET = "MySeCreT_2hMOygBwY";
     
@@ -113,6 +105,8 @@ public class ServerConnection {
         this.inQueue = inQueue;
 
         this.outQueue = new LinkedBlockingQueue<byte[]>(this.controller.getStaticConf().getOutQueueSize());
+
+		initSocketFactory();
 
         // Connect to the remote process or just wait for the connection?
      		if (isToConnect()) {
@@ -496,6 +490,31 @@ public class ServerConnection {
 		}
     }
         //******* EDUARDO END **************//
+
+	private void initSocketFactory(){
+		secretKey = getSecretKey();
+
+		String algorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
+		try (FileInputStream fis = new FileInputStream("config/keysSSL_TLS/" + this.controller.getStaticConf().getSSLTLSKeyStore())){
+			ks = KeyStore.getInstance(KeyStore.getDefaultType());
+			ks.load(fis, SECRET.toCharArray());
+		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+			logger.error("SSL connection error.",e);
+		}
+		try {
+			KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
+			kmf.init(ks, SECRET.toCharArray());
+
+			TrustManagerFactory trustMgrFactory = TrustManagerFactory.getInstance(algorithm);
+			trustMgrFactory.init(ks);
+			SSLContext context = SSLContext.getInstance(this.controller.getStaticConf().getSSLTLSProtocolVersion());
+			context.init(kmf.getKeyManagers(), trustMgrFactory.getTrustManagers(), new SecureRandom());
+			socketFactory = context.getSocketFactory();
+
+		} catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | KeyManagementException e) {
+			logger.error("SSL connection error.",e);
+		}
+	}
     
     
     /**
@@ -512,48 +531,6 @@ public class ServerConnection {
 	 */
 
 	public void ssltlsCreateConnection() {
-
-		SecretKeyFactory fac;
-		PBEKeySpec spec;
-		try {
-			fac = TOMUtil.getSecretFactory();
-			spec = TOMUtil.generateKeySpec(SECRET.toCharArray());
-			secretKey = fac.generateSecret(spec);
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-			logger.error("Algorithm error.", e);
-		}
-
-		String algorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
-		try {
-			fis = new FileInputStream("config/keysSSL_TLS/" + this.controller.getStaticConf().getSSLTLSKeyStore());
-			ks = KeyStore.getInstance(KeyStore.getDefaultType());
-			ks.load(fis, SECRET.toCharArray());
-		} catch (FileNotFoundException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
-			logger.error("SSL connection error.",e);
-		} catch (IOException e) {
-			logger.error("SSL connection error.",e);
-		} finally {
-			if (fis != null) {
-				try {
-					fis.close();
-				} catch (IOException e) {
-					logger.error("IO error.",e);
-				}
-			}
-		}
-		try {
-			kmf = KeyManagerFactory.getInstance(algorithm);
-			kmf.init(ks, SECRET.toCharArray());
-
-			trustMgrFactory = TrustManagerFactory.getInstance(algorithm);
-			trustMgrFactory.init(ks);
-			context = SSLContext.getInstance(this.controller.getStaticConf().getSSLTLSProtocolVersion());
-			context.init(kmf.getKeyManagers(), trustMgrFactory.getTrustManagers(), new SecureRandom());
-			socketFactory = context.getSocketFactory();
-
-		} catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | KeyManagementException e) {
-			logger.error("SSL connection error.",e);
-		}
 		// Create the connection.
 		try {
 			this.socket = (SSLSocket) socketFactory.createSocket(this.controller.getStaticConf().getHost(remoteId),
