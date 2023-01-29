@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * It sends a request to the replicas, receives the reply, and delivers it to
  * the application.
  */
-public class ServiceProxy extends TOMSender {
+public class ServiceProxy extends  TOMSender {
     
         private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -458,7 +458,7 @@ public class ServiceProxy extends TOMSender {
          */
 	protected int getReplyQuorum() {
 		if (getViewManager().getStaticConf().isBFT()) {
-			return ((getViewManager().getCurrentViewN() + getViewManager().getCurrentViewF()) / 2) + 1;
+			return ((getViewManager().getCurrentViewN() - getViewManager().getCurrentViewF()) / 2) + 1;
 		} else {
 			return ((getViewManager().getCurrentViewN()) / 2) + 1;
 		}
