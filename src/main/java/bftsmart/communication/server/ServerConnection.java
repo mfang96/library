@@ -358,7 +358,7 @@ public class ServerConnection {
             while (doWork) {
                 //get a message to be sent
                 try {
-                    data = outQueue.take();
+                    data = outQueue.poll(POOL_TIME, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException ex) {
                 }
 

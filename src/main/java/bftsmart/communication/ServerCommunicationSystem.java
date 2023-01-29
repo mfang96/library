@@ -111,7 +111,7 @@ public class ServerCommunicationSystem extends Thread {
                     logger.debug("After " + count + " messages, inQueue size=" + inQueue.size());
                 }
 
-                SystemMessage sm = inQueue.take();
+                SystemMessage sm = inQueue.poll(MESSAGE_WAIT_TIME, TimeUnit.MILLISECONDS);
 
                 if (sm != null) {
                     logger.debug("<-- receiving, msg:" + sm);
