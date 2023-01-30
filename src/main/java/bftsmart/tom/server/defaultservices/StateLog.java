@@ -35,7 +35,6 @@ public class StateLog {
     private int lastCheckpointCID; // Consensus ID for the last checkpoint
     private byte[] state; // State associated with the last checkpoint
     private byte[] stateHash; // Hash of the state associated with the last checkpoint
-    private int position; // next position in the array of batches to be written
     private int lastCID; // Consensus ID for the last messages batch delivered to the application
     private int id; //replica ID
 
@@ -52,7 +51,6 @@ public class StateLog {
         this.lastCheckpointCID = -1;
         this.state = initialState;
         this.stateHash = initialHash;
-        this.position = 0;
         this.lastCID = -1;
         this.id = id;
     }
@@ -68,7 +66,6 @@ public class StateLog {
         this.lastCheckpointCID = -1;
         this.state = null;
         this.stateHash = null;
-        this.position = 0;
         this.lastCID = -1;
         this.id = id;
     }
@@ -94,7 +91,6 @@ public class StateLog {
                 messageBatches[i] = null;
     	}
 
-        position = 0;
         this.state = state;
         this.stateHash = stateHash;
                        
@@ -159,9 +155,9 @@ public class StateLog {
      * @param lastConsensusId
      */
     public void addMessageBatch(byte[][] commands, MessageContext[] msgCtx, int lastConsensusId) {
+        int position = lastConsensusId - lastCheckpointCID - 1;
         if (position < messageBatches.length) {
             messageBatches[position] = new CommandsInfo(commands, msgCtx);
-            position++;
         }
         setLastCID(lastConsensusId);
     }
@@ -187,13 +183,6 @@ public class StateLog {
     }
 
     /**
-     * Retrieves the total number of stored batches kept since the last checkpoint
-     * @return The total number of stored batches kept since the last checkpoint
-     */
-    public int getNumBatches() {
-        return position;
-    }
-    /**
      * Constructs a TransferableState using this log information
      * @param cid Consensus ID correspondent to desired state
      * @param setState
@@ -205,6 +194,7 @@ public class StateLog {
         CommandsInfo[] batches = null;
 
         int lastCID = -1;
+
        
         if (cid >= lastCheckpointCID && cid <= this.lastCID) {
             
@@ -230,9 +220,8 @@ public class StateLog {
      */
     public void update(DefaultApplicationState transState) {
 
-        position = 0;
         if (transState.getMessageBatches() != null) {
-            for (int i = 0; i < transState.getMessageBatches().length; i++, position = i) {
+            for (int i = 0; i < transState.getMessageBatches().length; i++) {
                 this.messageBatches[i] = transState.getMessageBatches()[i];
             }
         }
