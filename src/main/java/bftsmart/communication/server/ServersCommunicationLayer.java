@@ -20,10 +20,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -38,7 +35,7 @@ import bftsmart.communication.SystemMessage;
 import bftsmart.reconfiguration.ServerViewController;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.util.TOMUtil;
-import java.net.InetAddress;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -171,8 +168,15 @@ public class ServersCommunicationLayer extends Thread {
 		context.init(kmf.getKeyManagers(), trustMgrFactory.getTrustManagers(), new SecureRandom());
 
 		serverSocketFactory = context.getServerSocketFactory();
-		this.serverSocketSSLTLS = (SSLServerSocket) serverSocketFactory.createServerSocket(myPort, 100,
-				InetAddress.getByName(myAddress));
+        do {
+            try{
+                this.serverSocketSSLTLS = (SSLServerSocket) serverSocketFactory.createServerSocket(myPort, 100,
+                        InetAddress.getByName(myAddress));
+            }catch (BindException bindException){
+                logger.error("bind fail", bindException);
+                Thread.sleep(ServerConnection.POOL_TIME);
+            }
+        } while (this.serverSocketSSLTLS == null);
 
 		serverSocketSSLTLS.setEnabledCipherSuites(this.controller.getStaticConf().getEnabledCiphers());
 
