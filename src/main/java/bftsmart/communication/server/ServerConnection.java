@@ -178,8 +178,9 @@ public class ServerConnection {
     public final void send(byte[] data) throws InterruptedException {
     	if (useSenderThread) {
 			// only enqueue messages if there queue is not full
-			if (!outQueue.offer(data)) {
+			while (!outQueue.offer(data)) {
 				logger.debug("Out queue for " + remoteId + " full (message discarded).");
+				outQueue.take();
 			}
 		} else {
 			sendLock.lock();
@@ -193,10 +194,7 @@ public class ServerConnection {
 	 * reconnection is done
 	 */
 	private final void sendBytes(byte[] messageData) {
-		boolean abort = false;
 		do {
-			if (abort)
-				return; // if there is a need to reconnect, abort this method
 			if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isOutputShutdown()) {
 				try {
 					// do an extra copy of the data to be sent, but on a single out stream write
@@ -335,7 +333,6 @@ public class ServerConnection {
             } catch (InterruptedException ie) {
             }
 
-            outQueue.clear();
             reconnect(null);
         }
     }
