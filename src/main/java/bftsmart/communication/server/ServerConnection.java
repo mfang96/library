@@ -197,7 +197,7 @@ public class ServerConnection {
 		do {
 			if (abort)
 				return; // if there is a need to reconnect, abort this method
-			if (socket != null && socketOutStream != null) {
+			if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isOutputShutdown()) {
 				try {
 					// do an extra copy of the data to be sent, but on a single out stream write
 					byte[] data = new byte[5 + messageData.length];// without MAC
@@ -214,11 +214,9 @@ public class ServerConnection {
 				} catch (IOException ex) {
 					closeSocket();
 					waitAndConnect();
-					abort = true;
 				}
 			} else {
 				waitAndConnect();
-				abort = true;
 			}
 		} while (doWork);
 	}
@@ -283,7 +281,7 @@ public class ServerConnection {
 
 		connectLock.lock();
 
-		if (socket == null || !socket.isConnected()) {
+		if (socket == null || !socket.isConnected() || socket.isClosed()) {
 
 			if (isToConnect()) {
 				ssltlsCreateConnection();
@@ -385,7 +383,7 @@ public class ServerConnection {
         public void run() {
           
         	while (doWork) {
-				if (socket != null && socketInStream != null) {
+				if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown()) {
 
 					try {
 						// read data length
@@ -454,7 +452,7 @@ public class ServerConnection {
 		public void run() {
 
 			while (doWork) {
-				if (socket != null && socketInStream != null) {
+				if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown()) {
 					try {
 						// read data length
 						int dataLength = socketInStream.readInt();
