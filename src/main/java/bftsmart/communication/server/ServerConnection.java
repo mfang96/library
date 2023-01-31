@@ -195,7 +195,7 @@ public class ServerConnection {
 	 */
 	private final void sendBytes(byte[] messageData) {
 		do {
-			if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isOutputShutdown()) {
+			if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isOutputShutdown() && socketOutStream!=null) {
 				try {
 					// do an extra copy of the data to be sent, but on a single out stream write
 					byte[] data = new byte[5 + messageData.length];// without MAC
@@ -380,7 +380,7 @@ public class ServerConnection {
         public void run() {
           
         	while (doWork) {
-				if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown()) {
+				if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown()&& socketInStream!=null) {
 
 					try {
 						// read data length
@@ -449,7 +449,7 @@ public class ServerConnection {
 		public void run() {
 
 			while (doWork) {
-				if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown()) {
+				if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown() && socketInStream!=null) {
 					try {
 						// read data length
 						int dataLength = socketInStream.readInt();
