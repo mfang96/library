@@ -70,7 +70,7 @@ public class ServerConnection {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
 
-    static final long POOL_TIME = 500;
+    public static final long POOL_TIME = 500;
     private ServerViewController controller;
     private SSLSocket socket;
     private DataOutputStream socketOutStream = null;

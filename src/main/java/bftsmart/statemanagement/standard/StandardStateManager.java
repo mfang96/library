@@ -41,6 +41,8 @@ import bftsmart.tom.leaderchange.CertifiedDecision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static bftsmart.communication.server.ServerConnection.POOL_TIME;
+
 /**
  *
  * @author Marcel Santos
@@ -144,6 +146,16 @@ public class StandardStateManager extends StateManager {
             StandardSMMessage stdMsg = (StandardSMMessage) msg;
             boolean sendState = stdMsg.getReplica() == SVController.getStaticConf().getProcessId();
 
+            if (msg.getCID() <= tomLayer.getLastExec()) {
+                while (msg.getCID() > dt.getRecoverer().getStateManager().getLastCID()) {
+                    try {
+                        Thread.sleep(POOL_TIME);
+                    } catch (InterruptedException e) {
+                        logger.error("wait fail");
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
             ApplicationState thisState = dt.getRecoverer().getState(msg.getCID(), sendState);
             if (thisState == null) {
 
