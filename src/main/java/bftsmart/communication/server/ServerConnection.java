@@ -47,6 +47,7 @@ import javax.net.ssl.TrustManagerFactory;
 import bftsmart.communication.SystemMessage;
 import bftsmart.reconfiguration.ServerViewController;
 import bftsmart.reconfiguration.VMMessage;
+import bftsmart.statemanagement.SMMessage;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.util.TOMUtil;
 import java.security.SecureRandom;
@@ -403,7 +404,8 @@ public class ServerConnection {
 						//The verification it is done for the SSL/TLS protocol.
 						sm.authenticated = true;
 
-						if (sm.getSender() == remoteId && controller.isCurrentViewMember(remoteId)) {
+						if (sm.getSender() == remoteId &&
+								(controller.isCurrentViewMember(remoteId) || sm instanceof SMMessage)) {
 							if (!inQueue.offer(sm)) {
 								logger.warn("Inqueue full (message from " + remoteId + " discarded).");
 							}/* else {
