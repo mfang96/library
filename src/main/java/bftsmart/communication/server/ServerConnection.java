@@ -403,7 +403,7 @@ public class ServerConnection {
 						//The verification it is done for the SSL/TLS protocol.
 						sm.authenticated = true;
 
-						if (sm.getSender() == remoteId) {
+						if (sm.getSender() == remoteId && controller.isCurrentViewMember(remoteId)) {
 							if (!inQueue.offer(sm)) {
 								logger.warn("Inqueue full (message from " + remoteId + " discarded).");
 							}/* else {
