@@ -180,7 +180,7 @@ public abstract class DefaultSingleRecoverable implements Recoverable, SingleExe
         // of not storing anything after a checkpoint and before logging more requests        
         if (ret == null || (config.isBFT() && cid > getLog().getLastCheckpointCID() && ret.getCertifiedDecision(this.controller) == null)) ret = new DefaultApplicationState();
 
-        logger.info("Getting log until CID " + cid + ", null: " + (ret.getSerializedState() == null));
+        logger.info("Getting log until CID {}, state null: {}, hash null: {}", cid, ret.getSerializedState() == null, ret.getStateHash() == null);
         logLock.unlock();
         return ret;
     }
