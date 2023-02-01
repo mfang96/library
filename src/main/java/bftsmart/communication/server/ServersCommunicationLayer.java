@@ -27,8 +27,8 @@ import java.security.Security;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import bftsmart.communication.SystemMessage;
@@ -38,7 +38,6 @@ import bftsmart.tom.util.TOMUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Random;
 
 import javax.crypto.SecretKey;
@@ -83,11 +82,10 @@ public class ServersCommunicationLayer extends Thread {
 
     private ServerViewController controller;
     private LinkedBlockingQueue<SystemMessage> inQueue;
-    private HashMap<Integer, ServerConnection> connections = new HashMap<>();
+    private ConcurrentHashMap<Integer, ServerConnection> connections = new ConcurrentHashMap<>();
     private ServerSocket serverSocket;
     private int me;
     private boolean doWork = true;
-    private Lock connectionsLock = new ReentrantLock();
     private ReentrantLock waitViewLock = new ReentrantLock();
     private List<PendingConnection> pendingConn = new LinkedList<PendingConnection>();
     private ServiceReplica replica;
@@ -218,7 +216,6 @@ public class ServersCommunicationLayer extends Thread {
 
     //******* EDUARDO BEGIN **************//
     public void updateConnections() {
-        connectionsLock.lock();
 
         if (this.controller.isInCurrentView()) {
 
@@ -248,19 +245,11 @@ public class ServersCommunicationLayer extends Thread {
             }
         }
 
-        connectionsLock.unlock();
     }
 
     private ServerConnection getConnection(int remoteId) {
-        connectionsLock.lock();
-        ServerConnection ret = this.connections.get(remoteId);
-        if (ret == null) {
-            ret = new ServerConnection(controller, null, 
-            		remoteId, this.inQueue, this.replica);
-            this.connections.put(remoteId, ret);
-        }
-        connectionsLock.unlock();
-        return ret;
+        return this.connections.computeIfAbsent(remoteId,
+                v->new ServerConnection(controller, null, remoteId, this.inQueue, this.replica));
     }
     //******* EDUARDO END **************//
 
@@ -376,18 +365,16 @@ public class ServersCommunicationLayer extends Thread {
 
     //******* EDUARDO BEGIN **************//
     private void establishConnection(SSLSocket newSocket, int remoteId) throws IOException {
-            connectionsLock.lock();
             if (this.connections.get(remoteId) == null) { //This must never happen!!!
                 //first time that this connection is being established
                 //System.out.println("THIS DOES NOT HAPPEN....."+remoteId);
-                this.connections.put(remoteId,
-                			new ServerConnection(controller, newSocket, remoteId, inQueue, replica));
+                this.connections.computeIfAbsent(remoteId,
+                        v -> new ServerConnection(controller, newSocket, remoteId, inQueue, replica));
             } else {
                 //reconnection	
             	logger.debug("ReConnecting with replica: {}", remoteId);
                 this.connections.get(remoteId).reconnect(newSocket);
             }
-            connectionsLock.unlock();
     }
     //******* EDUARDO END **************//
 
