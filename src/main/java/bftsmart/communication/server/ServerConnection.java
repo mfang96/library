@@ -179,8 +179,9 @@ public class ServerConnection {
     public final void send(byte[] data) throws InterruptedException {
     	if (useSenderThread) {
 			// only enqueue messages if there queue is not full
-			while (!outQueue.offer(data)) {
+			if (!outQueue.offer(data)) {
 				logger.debug("Out queue for " + remoteId + " full (message discarded).");
+				outQueue.take();
 			}
 		} else {
 			sendLock.lock();
@@ -332,8 +333,6 @@ public class ServerConnection {
                 Thread.sleep(POOL_TIME);
             } catch (InterruptedException ie) {
             }
-
-			outQueue.clear();
 
             reconnect(null);
         }
