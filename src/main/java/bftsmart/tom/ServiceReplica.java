@@ -79,6 +79,8 @@ public class ServiceReplica {
     private Replier replier = null;
     private RequestVerifier verifier = null;
 
+    private static final int waitEnoughMessageTime = 2000;
+
     /**
      * Constructor
      *
@@ -165,7 +167,12 @@ public class ServiceReplica {
             } finally {
                 waitTTPJoinMsgLock.unlock();
             }
-            
+            try {
+                Thread.sleep(waitEnoughMessageTime);
+            } catch (InterruptedException e) {
+                logger.error("wait fail", e);
+                Thread.currentThread().interrupt();
+            }
         }
         initReplica();
     }
