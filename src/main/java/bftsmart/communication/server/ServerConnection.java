@@ -179,7 +179,7 @@ public class ServerConnection {
     public final void send(byte[] data) throws InterruptedException {
     	if (useSenderThread) {
 			// only enqueue messages if there queue is not full
-			if (!outQueue.offer(data)) {
+			while (!outQueue.offer(data)) {
 				logger.debug("Out queue for " + remoteId + " full (message discarded).");
 				outQueue.take();
 			}
