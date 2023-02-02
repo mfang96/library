@@ -83,7 +83,6 @@ public class ServersCommunicationLayer extends Thread {
     private ServerViewController controller;
     private LinkedBlockingQueue<SystemMessage> inQueue;
     private ConcurrentHashMap<Integer, ServerConnection> connections = new ConcurrentHashMap<>();
-    private ServerSocket serverSocket;
     private int me;
     private boolean doWork = true;
     private ReentrantLock waitViewLock = new ReentrantLock();
@@ -352,12 +351,6 @@ public class ServersCommunicationLayer extends Thread {
 			} catch (IOException ex) {
 				logger.error("Problem during thread execution", ex);
 			}
-        }
-
-        try {
-            serverSocket.close();
-        } catch (IOException ex) {
-            logger.error("Failed to close server socket", ex);
         }
 
         logger.info("ServerCommunicationLayer stopped.");
