@@ -265,7 +265,7 @@ public abstract class StateManager {
 
     public synchronized void currentConsensusIdReceived(SMMessage smsg) {
         
-        logger.debug("Received  CID reply from replica {} with ID {} (expecting ID {})",smsg.getSender(), smsg.getCID(), queryID);
+        logger.debug("Received  CID reply {} from replica {} with ID {} (expecting ID {})", smsg.getState().getLastCID(), smsg.getSender(), smsg.getCID(), queryID);
         
         if (!isInitializing || waitingCID > -1 || queryID != smsg.getCID()) {
 
