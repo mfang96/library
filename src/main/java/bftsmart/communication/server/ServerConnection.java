@@ -181,7 +181,6 @@ public class ServerConnection {
 			// only enqueue messages if there queue is not full
 			while (!outQueue.offer(data)) {
 				logger.debug("Out queue for " + remoteId + " full (message discarded).");
-				outQueue.take();
 			}
 		} else {
 			sendLock.lock();
@@ -196,7 +195,7 @@ public class ServerConnection {
 	 */
 	private final void sendBytes(byte[] messageData) {
 		do {
-			if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isOutputShutdown() && socketOutStream!=null) {
+			if (socket != null && socketOutStream!=null) {
 				try {
 					// do an extra copy of the data to be sent, but on a single out stream write
 					byte[] data = new byte[5 + messageData.length];// without MAC
@@ -210,7 +209,7 @@ public class ServerConnection {
 					socketOutStream.write(data);
 
 					return;
-				} catch (IOException ex) {
+				} catch (IOException | NullPointerException ex) {
 					closeSocket();
 					waitAndConnect();
 				}
@@ -280,7 +279,7 @@ public class ServerConnection {
 
 		connectLock.lock();
 
-		if (socket == null || !socket.isConnected() || socket.isClosed()) {
+		if (socket == null || !socket.isConnected()) {
 
 			if (isToConnect()) {
 				ssltlsCreateConnection();
@@ -334,6 +333,8 @@ public class ServerConnection {
             } catch (InterruptedException ie) {
             }
 
+			outQueue.clear();
+
             reconnect(null);
         }
     }
@@ -381,7 +382,7 @@ public class ServerConnection {
         public void run() {
           
         	while (doWork) {
-				if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown()&& socketInStream!=null) {
+				if (socket != null && socketInStream!=null) {
 
 					try {
 						// read data length
@@ -414,7 +415,7 @@ public class ServerConnection {
 						}
 					} catch (ClassNotFoundException ex) {
 						logger.info("Invalid message received. Ignoring!");
-					} catch (IOException ex) {
+					} catch (IOException | NullPointerException ex) {
 						if (doWork) {
 							logger.debug("Closing socket and reconnecting");
 							closeSocket();
@@ -451,7 +452,7 @@ public class ServerConnection {
 		public void run() {
 
 			while (doWork) {
-				if (socket != null && socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown() && socketInStream!=null) {
+				if (socket != null && socketInStream!=null) {
 					try {
 						// read data length
 						int dataLength = socketInStream.readInt();
@@ -473,7 +474,7 @@ public class ServerConnection {
 
 					} catch (ClassNotFoundException ex) {
 						logger.error("Failed to deserialize message", ex);
-					} catch (IOException ex) {
+					} catch (IOException | NullPointerException ex) {
 						// ex.printStackTrace();
 						if (doWork) {
 							closeSocket();
