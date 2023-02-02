@@ -358,16 +358,13 @@ public class ServersCommunicationLayer extends Thread {
 
     //******* EDUARDO BEGIN **************//
     private void establishConnection(SSLSocket newSocket, int remoteId) throws IOException {
-            if (this.connections.get(remoteId) == null) { //This must never happen!!!
-                //first time that this connection is being established
-                //System.out.println("THIS DOES NOT HAPPEN....."+remoteId);
-                this.connections.computeIfAbsent(remoteId,
-                        v -> new ServerConnection(controller, newSocket, remoteId, inQueue, replica));
-            } else {
-                //reconnection	
-            	logger.debug("ReConnecting with replica: {}", remoteId);
-                this.connections.get(remoteId).reconnect(newSocket);
-            }
+        //first time that this connection is being established
+        //System.out.println("THIS DOES NOT HAPPEN....."+remoteId);
+        this.connections.computeIfAbsent(remoteId,
+                v -> new ServerConnection(controller, newSocket, remoteId, inQueue, replica));
+        //reconnection
+        logger.debug("ReConnecting with replica: {}", remoteId);
+        this.connections.get(remoteId).reconnect(newSocket);
     }
     //******* EDUARDO END **************//
 
