@@ -27,8 +27,7 @@ import java.security.Security;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import bftsmart.communication.SystemMessage;
@@ -197,11 +196,14 @@ public class ServersCommunicationLayer extends Thread {
       //Try connecting if a member of the current view. Otherwise, wait until the Join has been processed!
         if (controller.isInCurrentView()) {
             int[] initialV = controller.getCurrentViewAcceptors();
-            for (int i = 0; i < initialV.length; i++) {
-                if (initialV[i] != me) {
-                    getConnection(initialV[i]);
+            ExecutorService executors = Executors.newFixedThreadPool(initialV.length - 1);
+            for (int nodeID : initialV) {
+                if (nodeID != me) {
+                    executors.submit(() -> getConnection(nodeID));
                 }
             }
+            executors.shutdown();
+            executors.awaitTermination(1, TimeUnit.DAYS);
         }
         
         start();
@@ -268,7 +270,7 @@ public class ServersCommunicationLayer extends Thread {
         // delayed in relation to the others.
         /*Tulio A. Ribeiro*/
         Integer[] targetsShuffled = Arrays.stream( targets ).boxed().toArray( Integer[]::new );
-        Collections.shuffle(Arrays.asList(targetsShuffled), new Random(System.nanoTime())); 
+        Collections.shuffle(Arrays.asList(targetsShuffled), new Random(System.nanoTime()));
 
         for (int target : targetsShuffled) {
 			try {
