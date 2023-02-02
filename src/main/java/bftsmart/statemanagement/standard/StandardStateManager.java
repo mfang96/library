@@ -215,7 +215,7 @@ public class StandardStateManager extends StateManager {
                         stateTimer.cancel();
                     }
                 }
-                logger.debug("Expected replica {} sent state. Receive from replica {}", replica, msg.getSender());
+                logger.debug("Expected replica {} sent state. Receive from replica {}; State Hash is {}", replica, msg.getSender(), msg.getState().getStateHash());
                 senderStates.put(msg.getSender(), msg.getState());
 
                 logger.debug("Verifying more than F replies");
