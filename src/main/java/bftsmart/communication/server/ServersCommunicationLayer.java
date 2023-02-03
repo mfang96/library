@@ -291,7 +291,13 @@ public class ServersCommunicationLayer extends Thread {
     public void shutdown() {
         
         logger.info("Shutting down replica sockets");
-        
+
+        try {
+            serverSocketSSLTLS.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         doWork = false;
 
         //******* EDUARDO BEGIN **************//
